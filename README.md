@@ -1,8 +1,8 @@
 CleanFinder
 
-CleanFinder: A Browser-Native Suite for Genome Editing Analysis**
+CleanFinder: A Browser-Native Suite for Genome Editing Analysis
 
-CleanFinder is a lightweight, all-in-one web application for designing, validating, and analyzing genome editing experiments. It runs 100% in your web browser, requiring no installation, no server, and no data upload. This client-side approach guarantees that your sensitive genomic data never leaves your computer. 🔒
+CleanFinder is a lightweight, all-in-one web application for designing, validating, and analyzing genome editing experiments. It runs 100% in your web browser, requiring no installation, no server, and no data upload. This client-side approach guarantees that your sensitive genomic data never leaves your computer.
 
 CleanFinder is a comprehensive suite that integrates multiple tools into a single, seamless workflow.
 
@@ -10,9 +10,9 @@ Core Modules
 
 1. gDNA Finder (Amplicon Finder)
 This module retrieves genomic data in real-time from online repositories (like Ensembl), ensuring you always use the most up-to-date reference genome.
-Paired-Primer & Single/sgRNA Modes:** Retrieve amplicons using either primer pairs or a single guide sequence.
-Genomic Context:** Automatically identifies and lists genes within the retrieved amplicon region.
-Allele Dropout Prevention:** By visualizing your primers relative to the cut site, this module helps you design robust experiments that **prevent allele dropout**, a common artifact where large deletions remove a primer binding site.
+Paired-Primer & Single/sgRNA Modes: Retrieve amplicons using either primer pairs or a single guide sequence.
+Genomic Context: Automatically identifies and lists genes within the retrieved amplicon region.
+Allele Dropout Prevention: By visualizing your primers relative to the cut site, this module helps you design robust experiments that prevent allele dropout, a common artifact where large deletions remove a primer binding site.
 
 2. Analyze FASTQ
 The core analysis engine for quantifying your editing results from short-read sequencing (e.g., Illumina).
@@ -20,7 +20,7 @@ Robust Anchor-Based Analysis: Uses a buffer-based anchoring system to reliably i
 Functional Classification: Automatically classifies every read into intuitive, functionally-relevant categories:
     - Wild-type, HDR, Substitution/SNP
     - In-frame and Out-of-frame Indels
-Rich Visualizations:** Generates interactive graphs and tables for each sample, including:
+Rich Visualizations: Generates interactive graphs and tables for each sample, including:
     - Allele frequency charts (grouped by functional type or by specific alleles)
     - Indel size distribution plots
     - A Positional Mutation Profile heatmap.
