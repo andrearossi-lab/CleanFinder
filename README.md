@@ -1,6 +1,6 @@
-CleanFinder
 
-CleanFinder: A Browser-Native Suite for Genome Editing Analysis
+CleanFinder: Browser-Native Analysis of Editing Outcomes and Allelic States
+
 
 CleanFinder is a lightweight, all-in-one web application for designing, validating, and analyzing genome editing experiments. It runs 100% in your web browser, requiring no installation, no server, and no data upload. This client-side approach guarantees that your sensitive genomic data never leaves your computer.
 
