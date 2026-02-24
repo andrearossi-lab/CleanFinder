@@ -1,0 +1,608 @@
+📖 CleanFinder 1.0 Manual
+│
+│ ├── 1. Overview 
+│ ├── What is CleanFinder? 
+│ ├── Web App vs Python CLI 
+│ └── Supported data (Illumina, ONT, PacBio) 
+│
+│ ├── 2. Web App — Standard Mode 
+│ ├── Interface Overview 
+│ ├── Setting Up a Reference (Gene Fetch, gRNA, Anchors) 
+│ ├── Analysis Modes (Cas9, Cas12, PE, BE) 
+│ ├── Advanced Parameters & Scoring Matrix 
+│ ├── Running Analysis (Live Progress Tracking) 
+│ ├── Understanding Results (Allele Table, Alignment, REPAIRome) 
+│ └── Export (CSV & HTML)
+│ 
+│ ├── 3. Web App — Turbo Mode 
+│ ├── When to Use Turbo Mode (Heuristic vs. Glocal) 
+│ ├── 96-Well Plate View & Color Legend 
+│ ├── Dimmed Wells indicator 
+│ ├── Well Details & Filtering 
+│ └── File Naming for Multiwell 
+│
+│ ├── 4. Python CLI Guide 
+│ ├── Installation 
+│ ├── Basic Usage & Arguments 
+│ ├── Analysis Mode Examples 
+│ ├── Batch Processing 
+│ └── Output Formats (Console & CSV) 
+│
+│ ├── 5. Allelic Dropout  
+│ ├── Interface Overview
+│ ├── Setting Up a Reference (Gene Fetch, gRNA)
+│ ├── Analysis 
+│
+│ ├── 6. Technical Notes 
+│ ├── Analysis Pipeline 
+│ ├── Classification Logic 
+│ ├── Alignment Algorithm (Affine Gap) 
+│ └── Microhomology Detection 
+│ 
+│ └── 7. FAQ / Troubleshooting
+
+
+CleanFinder 1.0 — User Manual
+
+Genotyping Analysis Tool v1.0.0
+
+Developed by Andrea Rossi — IUF Leibniz Research Institute,EACR Lab & GEMD Core Unit, Düsseldorf
+
+
+1. Introduction
+
+What Is CleanFinder?
+
+CleanFinder is a genotyping analysis platform engineered to categorize NGS sequencing reads with high precision. By utilizing a constrained glocal alignment algorithm, it compares amplicon reads against a reference sequence to accurately identify a comprehensive range of genomic modifications, including:
+
+Standard Indels: Wildtype, deletions, and insertions.
+
+Targeted Substitutions: Base editing and knock-ins.
+
+Complex Rearrangements: Large-scale Prime Editing and custom multi-variant outcomes.
+
+CleanFinder is available in two forms:
+
+CleanFinder is designed to be flexible, offering a client-side Web App for instant, visual analysis and a Python CLI for high-throughput bioinformatics pipelines.
+
+
+Feature	Web App (Browser-Native)	Python CLI
+Primary Platform	Any OS via Web Browser	Command-line (Python 3.7+)
+Best For	Interactive exploration & visual QC	Batch processing & automated pipelines
+Operational Modes	Standard: Full alignment detail
+Turbo: Rapid heuristic processing	Single: Individual FASTQ analysis
+Batch: Parallel multi-sample processing
+Data Privacy	Local execution: Data never leaves your machine	Local execution: Fully offline environment
+Core Outputs	Interactive dashboards, heatmaps, & CSVs	Console summaries & structured CSV exports
+
+
+Supported Sequencing Data
+
+- Illumina — Short-read amplicon sequencing (paired-end or single-end)
+- Oxford Nanopore (ONT) — Short- and Long- Long-read amplicon data
+- PacBio — Short- and Long-read amplicon data
+
+Input format: FASTQ files (`.fastq`, `.fq`). The Python CLI also accepts FASTA reference files.
+
+---
+
+2. Web App — Standard Mode
+
+The Standard Mode web app (`www.CleanFinder.org`) provides a full-featured dashboard with a sidebar for configuration and a main panel for results.
+
+2.1 Interface Overview
+
+The interface is divided into:
+
+- Sidebar (left) 
+— Configuration: reference sequence, gRNA, analysis mode, parameters, and file upload
+- Main Panel (right;
+ — Results: File overview (Grid vs Heatmap), Edit Distribution (Categories vs Indel types, Card (Total reads, Editing Efficiency, Out-of-frame %, In-of-frame %, Precise % (KI, BE, PE), Genotype Distribution,  min. read cut-off, min. %, min. Phred, Allel type (e.g. del.), delta (e.g. -13), frame (e.g. out-of-frame), aligned sequence, REPEIRome (e.g. MMHJ, MH: 3bp, PAM distal (10bp), number of reads, and %.  
+Additional charts: Indel size, frame distribution, microhomology length distribution, Repair Pathway (RIMA), PAM proximity deletion.
+Clone summary: File Name, Total Reads, Efficiency Knock-in %,	In-Frame %, Out-of-Frame %,	MMEJ % (of Deletions) exportable in .csv. 
+
+2.2 Setting Up a Reference
+
+Paste Reference Sequence
+
+1. Open the app in your browser
+2. In the sidebar, paste your wildtype amplicon sequence into the "Reference Sequence" field
+3. Paste your gRNA sequence into the gRNA Sequence field (Required for Anchors). If not the app will analyze your data in blind mode (w/o centering around the gRNA).
+3. The app will automatically detect anchors (the flanking regions used to extract the editing window from each read)
+
+Fetch from Gene Symbol
+
+Alternatively, you can fetch a reference directly from Ensembl/UCSC:
+
+1. Enter a Gene Symbol (e.g., `VHL`, `TP53`)
+2. Optionally enter a gRNA sequence — this ensures the reference is centered on your target site
+3. Click Fetch — the app retrieves X bp (the size of the bp can be set in the padding field below) centered on the gRNA cut site
+
+gRNA Sequence
+
+Enter your guide RNA (gRNA) sequence (without PAM). This is used to:
+- Center the analysis window on the cut site
+- Highlight the gRNA position in alignment views
+- Mark the PAM site in the reference
+
+2.3 Analysis Modes
+
+Select the appropriate mode from the sidebar dropdown:
+
+CleanFinder uses specialized alignment parameters tailored to the unique "molecular signatures" of different CRISPR systems. Selecting the correct mode ensures the highest possible accuracy for variant calling.
+
+
+Mode	Primary Use Case	Algorithmic Logic
+Cas9	Standard Indel detection	Optimized for small indels centered around the 3bp upstream of the PAM site.
+Cas12	Cpf1 / Cas12a editing	Adjusted for distal 5' staggered cuts, allowing for a larger search window for characteristic deletions.
+Prime Editing	Precise PE insertions/swaps	Uses relaxed gap penalties to prioritize the "Edit" sequence (pegRNA template) over the wildtype sequence.
+Base Editing	CBE / ABE transitions	Employs heavy gap penalties to suppress indel calls, focusing exclusively on high-confidence nucleotide substitutions (C → T or A → G).
+
+
+Mode-Specific Parameters
+
+- HDR Template (optional) — Expected knock-in sequence. Reads matching this are classified as "KI".
+- PE Edit Sequence (Prime Editing mode) — The expected edited sequence.
+- BE Conversion (Base Editing mode) — The expected base conversion pattern (e.g., `C → T`).
+
+2.4 Advanced Parameters
+
+Located under "Advanced Settings" in the sidebar:
+
+
+Parameter	Default	Purpose
+Anchor Length	20 bp	The "stable" sequence length flanking your target site used to lock the alignment in place.
+Max Mismatches	2	Number of allowed errors in the anchor regions (enables "fuzzy matching" for low-quality or polymorphic samples).
+Min Phred Score	0	The quality threshold; reads with an average score below this are discarded to prevent "false" variant calls.
+
+
+In Advanced Alignment Parameters, you gain manual control over the alignment scoring matrix. This is critical for non-standard nucleases or highly repetitive regions.
+
+
+Setting	Function
+Match	Reward score for identical bases.
+Mismatch	Penalty score for base differences (higher values = stricter substitution calling).
+Gap Open	Penalty for initiating a deletion or insertion (higher values = fewer indels).
+Gap Ext.	Penalty for extending an existing gap (higher values = shorter indels).
+
+2.5 Uploading Reads
+
+FASTQ Files
+- Click "Upload FASTQ" in the sidebar
+- Select one or more `.fastq` / `.fq` files
+
+Paste Sequences (only in Turbo mode)
+- Alternatively, paste raw sequences directly (one per line) or paste FASTQ-formatted text
+
+2.6 Running Analysis
+
+1. Click "Start Analysis" 
+2. Live Progress Tracking: The interface transitions to a real-time monitor. You don’t have to wonder if the app has frozen; CleanFinder provides live telemetry:
+-	Throughput: Displays the number of reads being processed per second. 
+-	ETA: A dynamic countdown showing exactly when your results will be ready.
+-	Progress Bar: A visual representation of the total FASTQ file completion.
+3. Results appear in the main panel
+
+2.7 Understanding Results
+
+Summary Badges
+At the top of results, badges show key metrics:
+- Total Reads — Number of input reads
+- Edited % — Proportion of edited reads
+
+Allele Table
+Each unique genotype is listed as a row showing:
+- Call — Rank by frequency (wt always on top if available)
+- Type — WT, DEL, INS, SNP, KI, PE, BE
+- Δ (Delta) — Size difference from reference (e.g., -3 = 3bp deletion)
+- Frame — In-Frame or Out-of-Frame
+- Reads — Count and percentage
+- Alignment — Visual alignment against reference with highlighted mutations
+- REPAIRome (MMEJ, NHEJ, ME size, PAM distance)
+
+Alignment View
+For each allele, the alignment shows:
+- Reference row — The wildtype sequence
+- Read row — The mutant sequence
+- Highlighted regions — gRNA in yellow, PAM in red, mutations in color
+- Deletions appear as dashes (`-`), insertions as extra bases
+
+Summary Charts
+- Pie chart — Distribution of editing outcomes (WT, In-Frame, Out-of-Frame, SNP, HDR)
+- Indel Size Distribution — Bar chart showing the frequency of each indel size
+- Additional Charts (Indels, Frameshifts, RIMA
+- Clones Summary (all stats)
+
+- Color legend (shown above the plate):
+  - 🟢 Green — KI/PE
+  - 🟣 Purple — BE
+  - 🔵 Blue — WT
+  - 🔴 Red — Deletion ( 🔴 Out-of-Frame Indel, 🔵In-Frame Indel)
+  - 🟡 Amber - SNP
+
+2.8 Export
+
+Click "CSV" to download results as a CSV file containing:
+- Genotype classification, delta, frame status
+- Read count and percentage
+- Aligned reference and read sequences
+- Raw middle sequence
+
+Click "html" to download an html file containing a visual representation of the results:
+- Genotype classification, delta, frame status
+- Read count and percentage
+- Aligned reference and read sequences
+
+3. Web App — Turbo Mode
+
+Turbo Mode is a lightweight, high-velocity alternative optimized for the rapid screening of large-scale experiments, such as 96-well or 384-well plates.
+
+3.1 When to Use Turbo Mode
+
+While the Standard Mode uses a rigorous "glocal" alignment for every read, Turbo Mode utilizes a heuristic alignment algorithm. This allows for massive throughput, though it may be slightly less precise when calling complex, non-standard variants.
+
+Metric	Standard Mode	Turbo Mode
+Throughput	High Precision (~10K reads/sec)	Extreme Speed (~100K reads/sec)
+Logic	Exhaustive Glocal Alignment	Heuristic (Short-cut) Mapping
+Best For	Final data for publication	Initial high-volume screening
+Visuals	Full alignment + detailed plots	Simplified allele tables
+
+
+3.2 Setup
+
+1. Paste your Reference Sequence
+2. Enter the gRNA Sequence (optional — for highlighting)
+3. Upload one or more FASTQ files (or paste sequences)
+4. Click "Run Analysis"
+
+3.3 96-Well Plate View
+
+Results are displayed as a 96-well plate grid (A1–H12):
+
+- Each well shows a pie chart (conic gradient) representing the allele distribution
+- Color legend (shown above the plate):
+  - 🟢 Green — Wildtype
+  - 🟣 Purple — HDR
+  - 🔵 Blue — In-Frame Indel
+  - 🔴 Red — Out-of-Frame Indel
+  - 🟡 Amber — Substitution/SNP
+
+Dimmed Wells
+Wells with fewer than 100 aligned reads appear dimmed (30% opacity, dashed border). This indicates insufficient data for reliable genotyping. Hover over a dimmed well to see the exact read count.
+
+3.4 Well Details
+
+Click any well to view its detailed Allele Breakdown below the plate:
+
+- Min Reads filter (default: 100) — Hides rare alleles below this threshold. Adjustable per-well.
+- Allele table — Shows each unique genotype with alignment, type, delta, and read count
+- Indel size distribution chart
+
+3.5 File Naming for Multiwell
+
+For automatic well assignment, name your files with the well position:
+- `A1_VHL.fastq`, `B3-sample.fq`, `C12.fastq`
+- Pattern: `[A-H][1-12]` at the start of the filename
+- Files without well positions are assigned sequentially (A1, A2, ..., H12)
+
+4. Python CLI
+
+The Python CLI (`cleanfinder.py`) provides the same analysis engine in a command-line interface, suitable for batch processing and integration into bioinformatics pipelines.
+
+4.1 Installation
+
+Requirements: Python 3.7+ (no external dependencies — uses only the standard library)
+
+No Installation Required. CleanFinder is a standalone script that uses only the Python Standard Library.
+
+4.2 Basic Usage and Arguments
+
+The primary workflow requires a **Reference** (FASTA or plain text) and Reads (one or more FASTQ files).
+
+bash
+Standard command structure
+python cleanfinder.py -r [REFERENCE] -q [READS.fastq] -g [GRNA]
+
+Example: Single file analysis
+python cleanfinder.py -r ref.fa -q sample_A1.fastq -g TCTGCAGAATGTCAAAG
+
+4.3 Full Command-Line Reference
+
+Required (unless using batch mode)
+
+| Flag | Description |
+|---|---|
+| `-r`, `--ref` | Reference sequence — FASTA file or plain text sequence |
+| `-q`, `--reads` | FASTQ file(s) with sequencing reads (supports multiple files) |
+
+Optional
+
+| Category | Flag | Default | Description |
+|---|---|---|---|
+| **Input** | `-r`, `--ref` | — | **(Required)** Reference sequence (FASTA file or plain DNA string) |
+| | `-q`, `--reads` | — | **(Required)** FASTQ file(s). Supports multiple space-separated files |
+| | `-g`, `--grna` | — | gRNA sequence (without PAM) for window anchoring |
+| **Logic** | `--mode` | `cas9` | Analysis mode: `cas9`, `cas12`, `prime`, `base` |
+| | `--hdr` | — | Expected HDR/Knock-in template sequence |
+| | `--pe-edit` | — | Expected Prime Edit sequence (required for `prime` mode) |
+| | `--be-conversion`| — | Base conversion pattern, e.g., `C>T` (required for `base` mode) |
+| **Filters** | `--min-phred` | `0` | Minimum average Phred score per read (0–40) |
+| | `--max-mismatches`| `2` | Max mismatches allowed in anchor regions (default: 2) |
+| | `--anchor-len` | `20` | Length of flanking anchors (default: 20 bp) |
+| | `--window-size` | `40` | Window size on each side of gRNA (default: 40 bp) |
+| **Output**| `-o`, `--output` | `results.csv`| Path for the output CSV (or directory for batch mode) |
+| | `--top` | `10` | Number of top alleles to display in the console |
+| | `--no-alignment` | — | Disable alignment visualization in the console |
+| | `--quiet` | — | Print only summary stats (useful for large batches) |
+| **Batch** | `--batch` | — | Path to a CSV config file for processing diverse samples |
+
+4.4 Analysis Modes — Examples
+
+A. Standard Cas9 / Cas12a
+Standard indel analysis. Cas12 mode allows for the characteristic staggered cut sites.
+```bash
+python cleanfinder.py -r ref.fa -q reads.fq -g ATCGATCGATCGATCG --mode cas9
+```
+
+B. Prime Editing (PE)
+Analyzes precise swaps/insertions. Requires the expected edit sequence.
+```bash
+python cleanfinder.py -r ref.fa -q reads.fq --mode prime --pe-edit GCTAGCTAG --window-size 60
+```
+
+C. Base Editing (BE)
+Focuses on substitutions and suppresses indel calling via high gap penalties.
+```bash
+python cleanfinder.py -r ref.fa -q reads.fq --mode base --be-conversion C>T
+```
+
+D. Quality-Restricted Analysis
+Filter out low-quality reads (e.g., from ONT runs) to prevent false mutation calls.
+```bash
+python cleanfinder.py -r ref.fa -q sample.fq --min-phred 25 --top 20
+```
+
+4.5 Multi-File Analysis and Processing
+
+CleanFinder can process multiple files simultaneously if they share the same reference and gRNA. This is ideal for screening 96-well plates.
+
+```bash
+# Analyze all FASTQ files in current directory
+python cleanfinder.py -r ref.fa -g GRNA -q *.fastq -o summary.csv
+```
+
+Output:
+1. A detailed report for every individual file.
+2. A **Multiwell Summary Table** at the very end comparing Editing Efficiency across all files.
+
+---
+
+4.5 Batch Mode (Diverse Experiments)
+
+For complex experiments where every sample has a different reference or gRNA, use a Config CSV.
+
+```bash
+python cleanfinder.py --batch config.csv -o results_folder/
+```
+
+`config.csv` Requirements:
+The CSV must have headers. Recommended columns: `sample_name`, `fastq`, `reference`, `grna`, `mode`.
+```csv
+sample_name,fastq,reference,grna,mode
+Well_A1,A1_reads.fq,ref_vhl.fa,TCTGCAGAATGTCAAAG,cas9
+Well_B1,B1_reads.fq,ref_tp53.fa,GACTCCAGTGGTAATCT,cas12
+```
+
+4.6 Output Formats
+
+📊 Console Report (Visual)
+The CLI generates a high-fidelity visual report directly in your terminal:
+- ASCII Logo: Confirms the version and developer info.
+- Summary Statistics: Total reads, aligned, unaligned, WT%, and edited%.
+- Bar Charts: Shows distribution of genotypes and frame status using block characters (`█░`).
+- Repair Pathways: MMEJ vs NHEJ distribution (for deletions).
+- Alignment View: Shows the exact mutation site with markers:
+  - `*` = Mismatch/SNP
+  - `+` = Insertion
+  - `^` = Deletion
+
+📄 Structured CSV
+The primary output is a `results.csv` containing:
+
+| Column | Description |
+|---|---|
+| Type | Genotype classification (WT, DEL, INS, SNP, KI, PE, BE) |
+| Delta | Size difference from reference (e.g., -3 for a 3bp deletion) |
+| Frame | In-Frame or Out-Frame |
+| Sequence | Raw extracted sequence between anchors |
+| Aligned_Ref | Aligned reference string (including gaps) |
+| Aligned_Read | Aligned read string (including gaps) |
+| Reads | Number of reads matching this genotype |
+| Percent | Percentage of total aligned reads |
+
+5. Allelic Dropout Analyzer
+
+The Allelic Dropout (ADO) Analyzer (`allelic_dropout.html`) is a specialized tool designed to detect heterozygous SNPs in long-read sequencing data. This is critical for assessing whether CRISPR editing has caused a "dropout" of one allele (e.g., due to large deletions or rearrangements).
+
+5.1 Interface Overview
+
+The interface is optimized for targeted SNP detection:
+- Input Panel — FASTQ file upload, anchor sequence definition, and reference configuration.
+- Fetch Tool — Automated retrieval of genomic sequences from Ensembl/UCSC by gene symbol.
+- Parameters Panel — Controls for scan window size, coverage thresholds, and allele frequency ranges.
+- Results Dashboard — Clear "BIALLELIC" or "MONOALLELIC" calls with detailed SNP analysis.
+
+5.2 Setting Up an Analysis
+
+Loading Data and Reference
+1. Upload FASTQ — Select your sequencing file (optimized for long-read data).
+2. Stable Anchor Sequence — Enter a 15–20bp unique sequence present in all reads. This must be a "stable" region far from the expected editing site/SNP.
+3. Reference Sequence — Paste your wildtype amplicon sequence or use the Fetch from Gene Symbol tool.
+   - Tip: Providing a gRNA sequence during fetch ensures the reference is perfectly centered on your region of interest.
+
+Tuning Parameters
+- Scan Window — How many bases to search on either side of the anchor (Default: 500bp).
+- Min Coverage — Minimum reads required to call a SNP (Default: 500).
+- Min/Max Allele Freq — The frequency range expected for a heterozygous SNP (Default: 30%–70%).
+
+5.3 Running the Analysis
+
+1. Click "Run Analysis".
+2. Matrix Construction — The tool aligns reads around your stable anchor and builds a base-frequency matrix for every position in the scan window.
+3. SNP Detection — High-quality positions showing two distinct bases within the target frequency range are identified.
+
+5.4 Understanding ADO Results
+
+| Call | Meaning |
+|---|---|
+| BIALLELIC | (🟢 Green) A high-confidence heterozygous SNP was detected. Both alleles are present in the sample. |
+| MONOALLELIC | (🟡 Amber) No heterozygous SNPs were found. This may indicate Allelic Dropout or a naturally homozygous sample. |
+| ERROR | (🔴 Red) Analysis failed, likely due to low anchor matching or insufficient coverage. |
+
+SNP Table Details
+- Position — Relative to your anchor sequence.
+- Bases & Frequencies — The identity and ratio of the two observed alleles.
+- Context — A visual snippet of the reference sequence around the identified SNP.
+
+6. Technical Notes
+
+6.1 Analysis Pipeline
+
+The analysis follows these steps for each read:
+
+```
+Read → Anchor Matching → Middle Extraction → Classification → Alignment
+```
+
+1. Anchor Matching — The left and right flanking sequences (anchors) are searched in the read using fuzzy matching (allowing up to N mismatches). Both forward and reverse-complement orientations are tested.
+2. Middle Extraction — The region between the two anchors is extracted. This is the "editing window" compared against the reference.
+3. Classification — The extracted middle is compared to the reference middle to determine the genotype.
+4. Alignment — An affine gap fitting alignment is performed to visualize the exact mutations.
+
+6.2 Anchor Matching
+
+Anchors are the first and last N bases of the reference sequence (default: 20 bp). They serve as landmarks to locate the editing window in each read.
+
+- Fuzzy matching allows up to `max_mismatches` (default: 2) mismatches per anchor
+- Both forward and **reverse complement** orientations are tested
+- Reads where neither orientation matches are classified as "Unaligned"
+
+6.3 Classification Logic
+
+| Type | Condition |
+|---|---|
+| WT (Wildtype) | Middle sequence exactly matches reference |
+| KI (Knock-In) | HDR template found within the middle sequence |
+| PE (Prime Edit) | PE edit sequence found within the middle (Prime Editing mode) |
+| BE (Base Edit) | Expected base conversions detected with no indels (Base Editing mode) |
+| SNP | Same length as reference but different sequence |
+| DEL (Deletion) | Shorter than reference (Δ < 0) |
+| INS (Insertion) | Longer than reference (Δ > 0) |
+
+6.4 Frame Detection
+
+For indels (DEL and INS), frame status is determined by the delta:
+
+- In-Frame — Δ is divisible by 3 (preserves reading frame)
+- Out-of-Frame — Δ is not divisible by 3 (disrupts reading frame)
+
+6.5 Alignment Algorithm
+
+CleanFinder uses affine gap fitting alignment with three DP states:
+
+- M — Match/mismatch state
+- Ix — Gap in query (deletion in read)
+- Iy — Gap in reference (insertion in read)
+
+Default scoring parameters vary by mode:
+
+| Parameter | Cas9/Cas12 | Prime Editing | Base Editing |
+|---|---|---|---|
+| Match | +2 | +2 | +2 |
+| Mismatch | -6 | -3 | -6 |
+| Gap Open | -10 | -1 | -20 |
+| Gap Extend | -2 | -0.5 | -20 |
+
+- Cas9/Cas12 — Standard penalties, good for detecting indels
+- Prime Editing — Relaxed gap penalties to detect precise small edits
+- Base Editing — Very high gap penalties to avoid calling indels; focuses on substitutions
+
+6.6 Microhomology Detection
+
+For deletion events, CleanFinder detects microhomology at the deletion junction, which indicates the repair pathway:
+
+- MMEJ (Microhomology-Mediated End Joining) — ≥2 bp microhomology at the junction
+- NHEJ (Non-Homologous End Joining) — <2 bp microhomology
+
+This is detected by comparing the sequence flanking the deletion breakpoint for shared motifs.
+
+7. FAQ & Troubleshooting
+
+Low alignment rate
+
+Problem: Most reads are "unaligned" or "unclassified."
+
+Solutions:
+- Check that the reference sequence matches your actual amplicon
+- Increase Max Mismatches (e.g., from 2 to 3)
+- Reduce Anchor Length (e.g., from 20 to 15) for shorter amplicons
+- Verify your reads are in the correct orientation
+
+No reads found in FASTQ
+
+Problem: The app reports 0 reads.
+
+Solutions:
+- Ensure the file is in standard FASTQ format (4 lines per record: @header, sequence, +, quality)
+- Check the file is not gzipped (`.fastq.gz` is not supported — decompress first)
+
+All reads classified as WT
+
+Problem: 100% wildtype even in edited samples.
+
+Solutions:
+- Verify the gRNA sequence is correct
+- Check that the analysis window covers the cut site (adjust Window Size)
+- Ensure the reference matches the actual wildtype amplicon (not a mutant)
+
+Turbo Mode: all pie charts look the same
+
+Problem: Wells in the plate view all show identical proportions.
+
+Solutions:
+- This is usually correct — if you targeted the same gene, many wells may have similar editing profiles
+- Wells with <100 reads are dimmed to indicate insufficient data
+- Click individual wells to see the detailed allele breakdown
+
+Large files are slow
+
+Solutions:
+- Use Turbo Mode for quick screening of many samples
+- In Standard Mode, consider processing one file at a time for very large files
+- Apply Phred quality filtering to reduce read count
+
+CSV export is empty
+
+Problem: Downloaded CSV has only headers.
+
+Solutions:
+- Ensure the analysis completed successfully (check for error messages)
+- Verify reads were aligned (check the "Aligned" count in the summary)
+
+Support & Contact
+
+If you encounter issues or have suggestions for future releases, please contact the developer:
+
+Andrea Rossi — [andrea.rossi@iuf-duesseldorf.de](mailto:andrea.rossi@iuf-duesseldorf.de)
+
+
+License
+
+MIT License — Copyright (c) 2026 Andrea Rossi
+
+---
+
+CleanFinder 1.0 — Genotyping Analysis Tool
+IUF Leibniz Research Institute, Düsseldorf
+
+
