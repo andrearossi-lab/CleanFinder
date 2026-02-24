@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanFinder Report - 2026-02-19T14-26-42</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .dna-helix { display: flex; justify-content: center; gap: 10px; margin-bottom: 2rem; height: 60px; perspective: 200px; }
+.strand { width: 8px; height: 60px; background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 4px; animation: 1s ease-in-out 0s infinite normal none running spin; opacity: 0.8; box-shadow: rgba(59, 130, 246, 0.5) 0px 0px 10px; }
+.strand:nth-child(1) { animation-delay: -1s; }
+.strand:nth-child(2) { animation-delay: -0.9s; }
+.strand:nth-child(3) { animation-delay: -0.8s; }
+.strand:nth-child(4) { animation-delay: -0.7s; }
+.strand:nth-child(5) { animation-delay: -0.6s; }
+.strand:nth-child(6) { animation-delay: -0.5s; }
+.strand:nth-child(7) { animation-delay: -0.4s; }
+.strand:nth-child(8) { animation-delay: -0.3s; }
+.strand:nth-child(9) { animation-delay: -0.2s; }
+.strand:nth-child(10) { animation-delay: -0.1s; }
+@keyframes spin { 
+  0%, 100% { transform: scaleY(1); opacity: 0.8; }
+  50% { transform: scaleY(0.4); opacity: 0.4; }
+}
+@keyframes pulseGlow { 
+  0%, 100% { box-shadow: rgba(59, 130, 246, 0.3) 0px 0px 4px, rgba(59, 130, 246, 0.1) 0px 0px 8px; }
+  50% { box-shadow: rgba(59, 130, 246, 0.6) 0px 0px 8px, rgba(59, 130, 246, 0.25) 0px 0px 16px; }
+}
+        body { padding: 20px; background: #f8fafc; }
+        .report-header { text-align: center; margin-bottom: 2rem; padding: 1rem; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border-radius: 8px; }
+        .report-header h1 { margin: 0; font-family: 'JetBrains Mono', monospace; }
+        .report-header p { margin: 0.5rem 0 0 0; opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>CleanFinder Report</h1>
+        <p>Generated: 2/19/2026, 3:26:42 PM</p>
+    </div>
+    
+
+
+
+                    <!-- Main Top Area: Grid (Left) + Distribution Chart (Right) - HIDDEN for Simplified Report -->
+                    
+
+                    <!-- Stats Overview (Moved Up) -->
+                    <div class="stats-grid" style="margin-bottom: 2rem;">
+                        <div class="stat-card">
+                            <span class="label">Total Reads</span>
+                            <span class="value" id="total-reads">5,000<div style="font-size:0.5em; font-weight:normal; opacity:0.8; margin-top:2px;">Reads Aligned (Filtered)</div></span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="label">Editing Efficiency (incl. SNPs)</span>
+                            <span class="value" id="editing-efficiency">10.0%</span>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid #ef4444;">
+                            <span class="label">Out-of-Frame</span>
+                            <span class="value" id="out-frame-pct" style="color: #ef4444;">0.0%</span>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+                            <span class="label">In-Frame</span>
+                            <span class="value" id="in-frame-pct" style="color: #3b82f6;">0.0%</span>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid #10b981;">
+                            <span class="label">PRECISE (PERFECT)</span>
+                            <span class="value" id="ki-pct" style="color: #10b981;">10.0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Table (Genotype Distribution) - MOVED HERE -->
+                    <div class="card full-width-card" style="margin-bottom: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <div class="card-header" style="background: linear-gradient(to right, #f8fafc, #ffffff); padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin: 0; color: #1e293b; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.2em;">📊</span> Genotype Distribution
+                            </h3>
+                            <div class="controls" style="display:flex; gap:15px; align-items:center;">
+                                <div class="filter-group" style="display:flex; align-items:center; gap:8px;">
+                                    <label for="min-reads-filter" style="font-weight:500; color:#475569;">Min
+                                        Reads:</label>
+                                    
+                                </div>
+                                <div class="filter-group" style="display:flex; align-items:center; gap:8px;">
+                                    <label for="min-pct-filter" style="font-weight:500; color:#475569;" title="Hide genotypes below this percentage">Min %:</label>
+                                    
+                                </div>
+                                <div class="filter-group" style="display:flex; align-items:center; gap:8px;">
+                                    <label for="min-phred-filter" style="font-weight:500; color:#475569;" title="Hide reads with avg Phred score below this value">Min Phred:</label>
+                                    
+                                </div>
+                                <div class="checkbox-wrapper" style="display:flex; align-items:center; gap:6px; padding: 6px 10px; background: #f1f5f9; border-radius: 6px;">
+                                    
+                                    <label for="group-by-delta" style="cursor: pointer; font-weight: 500; color: #334155;">Group
+                                        Indels</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Delta</th>
+                                        <th>Frame</th>
+                                        <th>Aligned Sequence</th>
+                                        <th style="text-align: center;">REPAIRome</th>
+                                        <th style="text-align: right;">Reads</th>
+                                        <th style="text-align: right;">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr>
+                <td><span class="badge badge-wt">WT</span></td>
+                <td>0 </td>
+                <td>-</td>
+                <td style="font-family: 'Courier New', monospace; font-size: 11px;">
+                    <div style="display:flex; flex-direction:column; overflow-x:auto; overflow-y:hidden; white-space:pre;">
+                        <!-- Fixed Reference Line (Gray with gRNA highlight) -->
+                        <div style="margin-bottom:2px; height:1.2em; line-height:1.2em;"><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">A</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">A</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">A</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">T</span></div>
+                        
+                        <!-- Read Line (Black with diffs) -->
+                        <div style="height:1.2em; line-height:1.2em;">TCCGCTTGAAGTTCAATTCGTAATAGATCTGACACACATTCGGAAGGATAGCTGACCTGATCGTACGTTGAGGTCACCGACAGACGGGACCACCCCGAACGGAAGATTATCCGGGGATCT</div>
+                        
+                        <!-- Insertion Line (Below, Green) -->
+                        
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex; flex-direction:column; gap:3px; align-items:center;">
+                        
+                        
+                    </div>
+                </td>
+                <td>4500</td>
+                <td>90.00%</td>
+            </tr><tr>
+                <td><span class="badge badge-ins" style="background:#8b5cf6;color:white">BE</span></td>
+                <td>0</td>
+                <td>-</td>
+                <td style="font-family: 'Courier New', monospace; font-size: 11px;">
+                    <div style="display:flex; flex-direction:column; overflow-x:auto; overflow-y:hidden; white-space:pre;">
+                        <!-- Fixed Reference Line (Gray with gRNA highlight) -->
+                        <div style="margin-bottom:2px; height:1.2em; line-height:1.2em;"><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">A</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">A</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">A</span><span style="background:#fef08a;color:black;font-weight:bold">C</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">T</span><span style="background:#fef08a;color:black;font-weight:bold">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">G</span><span style="color:#9ca3af">A</span><span style="color:#9ca3af">T</span><span style="color:#9ca3af">C</span><span style="color:#9ca3af">T</span></div>
+                        
+                        <!-- Read Line (Black with diffs) -->
+                        <div style="height:1.2em; line-height:1.2em;">TCCGCTTGAAGTTCAATTCGTAATAGATCTGACACACATTCGGAAGGATAGCTGA<span style="color:#dc2626;font-weight:bold">T</span>CTGATCGTACGTTGAGGTCACCGACAGACGGGACCACCCCGAACGGAAGATTATCCGGGGATCT</div>
+                        
+                        <!-- Insertion Line (Below, Green) -->
+                        
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex; flex-direction:column; gap:3px; align-items:center;">
+                        
+                        
+                    </div>
+                </td>
+                <td>500</td>
+                <td>10.00%</td>
+            </tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area (Collapsible) - HIDDEN for Simplified Report -->
+                    
+
+                    <div style="text-align: right; margin-top: 1rem;">
+                        
+                        
+                        
+                    </div>
+
+                    <!-- Clones Summary Table (Moved to Bottom) -->
+                    <div class="card full-width-card" style="margin-bottom: 1.5rem;">
+                        <details>
+                            <summary style="cursor: pointer; font-size: 1.1rem; font-weight: 600; list-style: none; display: flex; align-items: center;">
+                                <span style="margin-right:0.5rem">📋</span> Clones Summary (Click to Toggle)
+                            </summary>
+                            <div class="table-responsive" style="margin-top: 1rem;">
+                                <table id="clones-summary-table" class="interactive-table compact-table">
+                                    <thead>
+                                        <tr>
+                                            <th>File Name</th>
+                                            <th>Total Reads</th>
+                                            <th>Efficiency</th>
+                                            <th>Knock-in %</th>
+                                            <th>In-Frame %</th>
+                                            <th>Out-of-Frame %</th>
+                                            <th>MMEJ % (of Deletions)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody><tr data-filename="sim_SE200_5k_CBE_CtoT_10pct.fastq" style="cursor: pointer;">
+                <td style="font-weight:500;">sim_SE200_5k_CBE_CtoT_10pct.fastq</td>
+                <td>
+                    5000
+                    <div style="font-size:0.8em; color:#64748b;">(Filtered Aligned)</div>
+                </td>
+                <td><span style="color:var(--primary); font-weight:bold;">10.0%</span></td>
+                <td>10.0%</td>
+                <td>0.0%</td>
+                <td>0.0%</td>
+                <td>0.0%</td>
+            </tr></tbody>
+                                </table>
+                            </div>
+                        </details>
+                    </div>
+
+                    <!-- Clones Summary Table (Collapsible) -->
+
+
+
+                
+</body>
+</html>
