@@ -1,57 +1,120 @@
 
-CleanFinder: Browser-Native Analysis of Editing Outcomes and Allelic States
 
+ ____ _                  _____ _           _           
+  / ___| | ___  __ _ _ __ |  ___(_)_ __   __| | ___ _ __ 
+ | |   | |/ _ \/ _` | '_ \| |_  | | '_ \ / _` |/ _ \ '__|
+ | |___| |  __/ (_| | | | |  _| | | | | | (_| |  __/ |   
+  \____|_|\___|\__,_|_| |_|_|   |_|_| |_|\__,_|\___|_|  
 
-CleanFinder is a lightweight, all-in-one web application for designing, validating, and analyzing genome editing experiments. It runs 100% in your web browser, requiring no installation, no server, and no data upload. This client-side approach guarantees that your sensitive genomic data never leaves your computer.
+Algorithm
 
-CleanFinder is a comprehensive suite that integrates multiple tools into a single, seamless workflow.
+CleanFinder uses a two-stage, anchor-constrained glocal alignment strategy to classify CRISPR editing outcomes.
 
-Core Modules
+Stage 1: Anchor-Based Read Extraction
 
-1. gDNA Finder (Amplicon Finder)
-This module retrieves genomic data in real-time from online repositories (like Ensembl), ensuring you always use the most up-to-date reference genome.
-Paired-Primer & Single/sgRNA Modes: Retrieve amplicons using either primer pairs or a single guide sequence.
-Genomic Context: Automatically identifies and lists genes within the retrieved amplicon region.
-Allele Dropout Prevention: By visualizing your primers relative to the cut site, this module helps you design robust experiments that prevent allele dropout, a common artifact where large deletions remove a primer binding site.
+Each read is screened for two flanking anchor sequences (default: 20 bp) derived from the reference edges around the gRNA cut site. Anchors are matched using a fuzzy search with configurable mismatch tolerance, supporting both forward and reverse-complement orientations.
 
-2. Analyze FASTQ
-The core analysis engine for quantifying your editing results from short-read sequencing (e.g., Illumina).
-Robust Anchor-Based Analysis: Uses a buffer-based anchoring system to reliably identify on-target reads.
-Functional Classification: Automatically classifies every read into intuitive, functionally-relevant categories:
-    - Wild-type, HDR, Substitution/SNP
-    - In-frame and Out-of-frame Indels
-Rich Visualizations: Generates interactive graphs and tables for each sample, including:
-    - Allele frequency charts (grouped by functional type or by specific alleles)
-    - Indel size distribution plots
-    - A Positional Mutation Profile heatmap.
-HTML Report: Download a complete, self-contained HTML report of your analysis for sharing and archiving.
+```
+Reference:   [── Left Anchor (20bp) ──][── Analysis Window ──][── Right Anchor (20bp) ──]
+                                        ↑ gRNA cut site
 
-3. Allelic Dropout SNP Analyzer
-A dedicated module to detect allele dropout in your experiments. This tool uses long-read FASTQ data (e.g., PacBio/Nanopore) from a heterozygous sample to find a high-confidence heterozygous SNP. This SNP can then be used as a marker to confirm if one allele is "dropping out" (i.e., failing to amplify) in your separate short-read editing analysis.
+Read:        ...NNNN[── L Anchor ──][── Extracted Middle ──][── R Anchor ──]NNNN...
+```
 
-4. Transcript Finder
-An in-silico PCR tool for cDNA. It checks your primers against all known transcripts (isoforms) of a gene to predict amplicon sizes. This is ideal for validating qPCR primer specificity and ensuring you are amplifying the correct isoforms.
+Reads that fail to match both anchors are discarded as off-target. An optional **K-mer pre-filter** (10–13 bp seed from the left anchor) provides early rejection of unrelated reads for high-throughput performance.
 
-5. Genome PCR
-An in-silico PCR tool that blasts your primer pair against the entire human genome to check for specificity and predict potential off-target amplicons.
+Stage 2: Glocal Fitting Alignment
 
-6. Rev/RevComp Tool
-A simple utility to quickly calculate the reverse and reverse-complement of any DNA sequence.
+The extracted middle region is aligned against the reference window using a **glocal (fitting) alignment** with **affine gap penalties**. This forces the entire reference to align end-to-end against a substring of the read, naturally accommodating insertions and deletions at the cut site.
 
----
+The dynamic programming engine uses three state matrices (M, Ix, Iy) stored as flat `Int32Array` buffers for memory-efficient computation:
 
-Alignment Engine
+```javascript
+// Core alignment: 3-state affine gap DP
+// M  = Match/Mismatch matrix
+// Ix = Gap in Read (Deletion relative to Reference)
+// Iy = Gap in Reference (Insertion relative to Reference)
 
-CleanFinder's analysis modules (FASTQ Analyzer and Allelic Dropout Analyzer) are powered by a client-side JavaScript implementation of the Needleman–Wunsch global alignment algorithm.
+function fittingAlign(ref, read, match = 2, mismatch = -6, gapOpen = -10, gapExt = -2) {
+    const m = ref.length, n = read.length;
+    const width = n + 1;
+    const size = (m + 1) * width;
+    const M  = new Int32Array(size);
+    const Ix = new Int32Array(size);
+    const Iy = new Int32Array(size);
 
-Algorithm: Needleman-Wunsch with affine gap penalties.
-- Dynamic Scoring Matrix: The scoring is dynamically adjusted based on the selected enzyme for more biologically accurate results:
-  - SpCas9: { match: +5, mismatch: -4, gap open: -10, gap extend: -1 }
-  - Cas12a: { match: +4, mismatch: -3, gap open: -8, gap extend: -1 }
-  - Default: { match: +2, mismatch: -1, gap open: -5, gap extend: -1 }
+    // Initialization: free start in read (fitting), penalized gaps in ref (global)
+    M[0] = 0;
+    for (let j = 1; j <= n; j++) M[j] = 0;           // Free read start
+    for (let i = 1; i <= m; i++) Ix[i * width] = gapOpen + (i - 1) * gapExt;
 
-This algorithm performs a highly accurate, per-read alignment between the reference sequence and each sequencing read, allowing it to precisely characterize indels near the CRISPR cut site.
+    // Fill DP
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            const cur = i * width + j;
+            const score = (ref[i-1] === read[j-1]) ? match : mismatch;
 
-Availability
+            Iy[cur] = Math.max(M[cur-1] + gapOpen, Iy[cur-1] + gapExt);
+            Ix[cur] = Math.max(M[(i-1)*width+j] + gapOpen, Ix[(i-1)*width+j] + gapExt);
 
-CleanFinder is distributed as a single HTML file with embedded JavaScript and can be run in any modern web browser without installation. The live application is accessible by visiting andrearossi.de and launching the tool via the prompt open cleanfinder. The core JavaScript alignment algorithm is available under the MIT license at https://github.com/andrearossi-lab.
+            const diag = (i-1) * width + (j-1);
+            M[cur] = Math.max(M[diag], Ix[diag], Iy[diag]) + score;
+        }
+    }
+    // Traceback from last row (ref fully consumed) → free read end
+    // ...
+}
+```
+
+Mode-specific scoring presets:
+
+| Mode | Match | Mismatch | Gap Open | Gap Extend | Rationale |
+|------|-------|----------|----------|------------|-----------|
+| Cas9 | +2 | −6 | −3 | −1 | Balanced for short indels |
+| Cas12 | +2 | −6 | −5 | −0.5 | Accommodates staggered cuts |
+| Prime Editing | +2 | −3 | −1 | −0.3 | Permissive for long insertions |
+| Base Editing | +2 | −4 | −20 | −2 | Prohibits indels, favors substitutions |
+
+Genotype Classification
+
+After alignment, each read is classified based on the length difference (Δ) between extracted middle and reference:
+
+- **Δ = 0, identical** → Wild-Type (WT)
+- **Δ = 0, mismatches** → SNP or Base Edit
+- **Δ < 0** → Deletion (In-Frame if Δ mod 3 = 0)
+- **Δ > 0** → Insertion (In-Frame if Δ mod 3 = 0)
+- **Template match** → Knock-in (HDR) or Prime Edit
+
+Deletions are further analyzed for **microhomology** at junction sites to classify repair pathway (MMEJ ≥ 2 bp vs. NHEJ).
+
+Project Structure
+
+```
+CleanFinder/
+├── index_v5.html           # Web application (main entry point)
+├── cleanfinder.py          # Python CLI for batch/pipeline use
+├── js/
+│   └── app_v5.js           # Core engine: alignment, analysis, UI
+├── css/
+│   └── style.css           # Application styles
+├── turbomode.html          # Turbo Mode (high-throughput screens)
+├── allelic_dropout.html    # Allelic Dropout detection (beta)
+├── genome_viewer.html      # Interactive Genome Viewer
+├── README.md
+└── LICENSE
+```
+
+Citation
+
+> **CleanFinder**: A cross-platform genotyping suite for CRISPR editing analysis.  
+> Rossi A. et al., 2026.  
+> *Manuscript in preparation.*
+
+License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+Copyright (c) 2026 Andrea Rossi
+
+Developed by **GEMD** and **EACR** labs, IUF Leibniz Research Institute, Düsseldorf.  
+Funded by DFG (Deutsche Forschungsgemeinschaft).
